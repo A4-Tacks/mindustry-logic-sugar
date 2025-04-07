@@ -1,0 +1,9 @@
+{
+    "name": "logic-sugar",
+    "displayName": "Logic-Sugar",
+    "author": "A4-Tacks",
+    "description": "Some logic sugar statements",
+    "version": "0.1.0",
+    "minGameVersion": 136,
+    "hidden": true
+}
