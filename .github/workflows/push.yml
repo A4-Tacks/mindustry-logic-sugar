@@ -1,0 +1,37 @@
+name: Auto Pack
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install jq
+        uses: ConorMacBride/install-package@v1
+        with:
+          apt: jq
+      - uses: actions/checkout@v4
+      - name: Copy README
+        run: cp README.md src/
+      - name: Generate Git logs
+        run: git log --pretty=fuller | tee src/git.log
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Logic-Sugar
+          path: src
+      - name: Modify version to 135
+        run: |
+          jq .minGameVersion=135 src/mod.json | tee tmp.json &&
+          mv -v tmp.json src/mod.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Logic-Sugar-135
+          path: src
+
