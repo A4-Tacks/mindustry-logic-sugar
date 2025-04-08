@@ -15,3 +15,7 @@ Sugar statements after the write (e.g exit editor), convert to other statements
 ls ++ i # op add i i 1
 ls offset i # op add @counter @counter i
 ```
+
+# How To Use
+Download from Github Actions,
+Go to the Actions page and find the latest successful Action
