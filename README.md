@@ -17,5 +17,7 @@ ls offset i # op add @counter @counter i
 ```
 
 # How To Use
-Download from Github Actions,
-Go to the Actions page and find the latest successful Action
+Download from Github Actions
+
+1. Go to the Actions page and find the latest successful Action
+2. Output zip files in **Artifacts**
