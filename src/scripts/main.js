@@ -111,6 +111,12 @@ const sugars = {
     },
     body: stmt => "jump "+stmt.elem.index+" notEqual $ $==",
   },
+  "load@": {
+    args: {
+      "": "time",
+    },
+    body: "set $ @$",
+  },
   "setpc": {
     args: {
       "": "line",
