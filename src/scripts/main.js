@@ -113,9 +113,9 @@ const sugars = {
   },
   "load@": {
     args: {
-      "": "time",
+      "@": "time",
     },
-    body: "set $ @$",
+    body: "set $@ @$@",
   },
   "setpc": {
     args: {
