@@ -10,6 +10,10 @@ Sugar statements after the write (e.g exit editor), convert to other statements
 
 [Mindustry]: https://github.com/Anuken/Mindustry
 
+# Operations
+Referring to the source code of `scripts/main.js`,
+you can clearly see the expanded statement
+
 # Examples
 ```gas
 ls ++ i # op add i i 1
