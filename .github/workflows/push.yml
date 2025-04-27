@@ -29,13 +29,15 @@ jobs:
     name: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Preset subdir
         run: |
-          cp src -r ${{ matrix.name }} &&
+          cp src -vr ${{ matrix.name }} &&
           cd "$_" &&
-          cp ../README.md . &&
-          git log --pretty=fuller | tee git.log
+          cp ../README.md -v . &&
+          git log HEAD^..HEAD --pretty=fuller | tee git.log
 
       - name: Set minGameVersion
         run: |
