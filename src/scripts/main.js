@@ -62,6 +62,13 @@ const sugars = {
     },
     body: "op idiv $ $ $//=",
   },
+  "%=": {
+    args: {
+      "": "i",
+      "%=": "num",
+    },
+    body: "op mod $ $ $%=",
+  },
   "min": {
     args: {
       "": "i",
