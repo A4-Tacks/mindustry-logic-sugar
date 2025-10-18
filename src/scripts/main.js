@@ -143,6 +143,79 @@ const sugars = {
     },
     body: "op add @counter @counter $@counter+=",
   },
+  "rtbl": {
+    args: {
+      "(": "result",
+      ")=": "arr",
+      "size": "8",
+    },
+    body: stmt => {
+      let cases = stmt.args.size;
+      if (isNaN(cases)) cases = 1;
+      let results = stmt.args['('].split(",");
+      let vars = stmt.args[')='].split(",");
+
+      let base  = stmt.elem.index;
+      let block = results.length + 1;
+      let end   = base + cases * block - (block - 1);
+
+      let lines = [
+        "op mul __offset i "+block,
+        "op add @counter @counter __offset",
+      ]
+      for (let i = 0; i < cases; i++) {
+        for (let k in results) {
+          let slot = (vars[k] || 'var')+i;
+          lines.push("set "+results[k]+" "+slot)
+        }
+        lines.push("jump "+(end-i*block)+" always 0 0")
+      }
+      return lines
+    },
+  },
+  "wtbl": {
+    args: {
+      "(": "value",
+      ")->": "arr",
+      "size": "8",
+    },
+    body: stmt => {
+      let cases = stmt.args.size;
+      if (isNaN(cases)) cases = 1;
+      let results = stmt.args['('].split(",");
+      let vars = stmt.args[')->'].split(",");
+
+      let base  = stmt.elem.index;
+      let block = results.length + 1;
+      let end   = base + cases * block - (block - 1);
+
+      let lines = [
+        "op mul __offset i "+block,
+        "op add @counter @counter __offset",
+      ]
+      for (let i = 0; i < cases; i++) {
+        for (let k in results) {
+          let slot = (vars[k] || 'var')+i;
+          lines.push("set "+slot+" "+results[k])
+        }
+        lines.push("jump "+(end-i*block)+" always 0 0")
+      }
+      return lines
+    },
+  },
+  "for": {
+    args: {
+      "": "i",
+      "=": "0",
+      "<": "@links",
+    },
+    body: stmt => [
+      "getlink block $",
+      "jump "+(stmt.elem.index+3)+" greaterThanEq $ $<",
+      "op add $ $ 1",
+      "jump "+stmt.elem.index+" lessThan $ $<",
+    ],
+  },
 };
 const DEFAULT_OP = Object.keys(sugars)[0];
 
@@ -163,26 +236,57 @@ const LogicSugar = {
     }
   },
 
-  write(b) {
-    let action = sugars[this.op];
-    let s;
-    if (typeof action.body == "string" || action.body instanceof String) {
-      s = action.body;
-    } else {
-      s = action.body(this);
+  op_refresh_() {
+    debug(()=>"op refresh");
+    this.generate_stack_ = undefined;
+    this.generate_trivial_ = undefined;
+  },
+  gen_() {
+    if ('generate_stack_' in this
+      && this.generate_stack_ !== undefined
+      && this.generate_stack_ !== null
+    ) {
+      return this.generate_stack_
     }
-    debug(()=>"load snippet: "+s);
-    let regexp = /\$[^ \t\n"]*/g;
-    s = s.replace(regexp, v => this.args[v.substr(1)]);
-    debug(()=>"snippet expanded: "+s);
-    b.append(s)
+
+    let action = sugars[this.op];
+    let out;
+    if (typeof action.body == "string" || action.body instanceof String) {
+      out = action.body;
+    } else {
+      out = action.body(this);
+    }
+    let trivial = typeof out == 'string' || out instanceof String;
+    let outs = trivial ? [out] : out;
+    for (let i in outs) {
+      debug(()=>"load snippet: "+outs[i]);
+
+      let regexp = /\$[^ \t\n"]*/g;
+      outs[i] = outs[i].replace(regexp, v => this.args[v.substr(1)]);
+
+      debug(()=>"snippet expanded: "+outs[i]);
+    }
+    this.generate_stack_ = outs;
+    this.generate_trivial_ = trivial;
+    return this.gen_()
+  },
+  write(b) {
+    let generated = this.gen_().pop() || 'noop';
+    debug(() => "generate expanded: "+generated);
+    b.append(generated)
   },
   copy() {
-    let b = NAME+" "+this.op;
-    for (let k in sugars[this.op].args) {
-      b += " "+this.args[k];
+    let b;
+    let rest_stack = this.gen_();
+    if (this.generate_trivial_) {
+      b = NAME+" "+this.op;
+      for (let k in sugars[this.op].args) {
+        b += " "+this.args[k];
+      }
+      debug(()=>"trivial copy: "+b);
+    } else {
+      b = rest_stack.pop() || 'noop';
     }
-    debug(()=>"copy from: "+b);
     let read = singleAsmRead
       ? LAssembler.read(b.toString())
       : LAssembler.read(b.toString(), true);
@@ -254,6 +358,7 @@ const LogicSugar = {
       if (this.op != op) {
         this.op = op;
         this.buildt(root);
+        this.op_refresh_();
       }
       hide.run();
     });
