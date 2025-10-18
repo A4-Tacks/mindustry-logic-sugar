@@ -9,6 +9,7 @@ Sugar statements after the write (e.g exit editor), convert to other statements
 - 146..BE-25666
 - 147
 - 148
+- 152
 
 [Mindustry]: https://github.com/Anuken/Mindustry
 
