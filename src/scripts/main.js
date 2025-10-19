@@ -19,6 +19,11 @@ const generalRead = (b) => {
     : LAssembler.read(b.toString(), true);
   return read.size == 0 ? null : read.first();
 };
+// escape dollar
+const ed = s => {
+  let regexp = /\$/g;
+  return s.replace(regexp, s => "\\"+s);
+};
 
 
 const sugars = {
@@ -173,7 +178,7 @@ const sugars = {
       for (let i = 0; i < cases; i++) {
         for (let k in results) {
           let slot = (vars[k] || 'var')+i;
-          lines.push("set "+results[k]+" "+slot)
+          lines.push("set "+ed(results[k])+" "+ed(slot))
         }
         lines.push("jump "+(end-i*block)+" always 0 0")
       }
@@ -203,7 +208,7 @@ const sugars = {
       for (let i = 0; i < cases; i++) {
         for (let k in results) {
           let slot = (vars[k] || 'var')+i;
-          lines.push("set "+slot+" "+results[k])
+          lines.push("set "+ed(slot)+" "+ed(results[k]))
         }
         lines.push("jump "+(end-i*block)+" always 0 0")
       }
@@ -268,8 +273,8 @@ const LogicSugar = {
     for (let i in outs) {
       debug(()=>"load snippet: "+outs[i]);
 
-      let regexp = /\$[^ \t\n"]*/g;
-      outs[i] = outs[i].replace(regexp, v => this.args[v.substr(1)]);
+      let regexp = /\\(\$)|\$([^ \t\n"]*)/g;
+      outs[i] = outs[i].replace(regexp, (_, s, v) => s || this.args[v]);
 
       debug(()=>"snippet expanded: "+outs[i]);
     }
