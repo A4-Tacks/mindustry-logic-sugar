@@ -29,6 +29,7 @@ jobs:
   run:
     needs: create
     runs-on: ubuntu-latest
+    if: ${{ success() }}
     strategy:
       matrix:
         include:
