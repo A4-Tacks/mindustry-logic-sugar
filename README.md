@@ -38,7 +38,4 @@ ls offset i # op add @counter @counter i
 ```
 
 # How To Get
-Download from Github Actions
-
-1. Go to the Actions page and find the latest successful Action
-2. Output zip files in **Artifacts**
+Download from Github [Releases](https://github.com/A4-Tacks/mindustry-logic-sugar/releases)
