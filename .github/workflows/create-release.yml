@@ -1,0 +1,30 @@
+name: create-release
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: write
+
+jobs:
+  set-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install jq
+        uses: ConorMacBride/install-package@v1
+        with:
+          apt: jq
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - run: |
+          if gh release list --json tagName -L1 |
+            jq 'first.tagName | . != input.version | .//error' - src/mod.json
+          then
+            gh release create "v$(jq -r .version src/mod.json)"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
