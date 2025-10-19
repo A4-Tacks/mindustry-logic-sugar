@@ -1,22 +1,33 @@
-name: Auto Pack
+name: create-release
 
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
+
+permissions:
+  contents: write
 
 jobs:
-  set-env:
+  create:
     runs-on: ubuntu-latest
     steps:
-      - name: Install jq
-        uses: ConorMacBride/install-package@v1
+      - uses: ConorMacBride/install-package@v1
         with:
-          apt: jq
+          apt: jq zip
 
-  modify-version-and-upload:
-    needs: set-env
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - run: |
+          gh release list --json tagName -L1 |
+            jq 'first.tagName | . != input.version | .//error' - src/mod.json &&
+            gh release create "v$(jq -r .version src/mod.json)"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  run:
+    needs: create
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -27,7 +38,6 @@ jobs:
             minGameVersion: 136
           - name: Logic-Sugar-147
             minGameVersion: 146
-    name: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,7 +56,15 @@ jobs:
           jq .minGameVersion=${{ matrix.minGameVersion }} mod.json \
           | tee tmp.json &&
           mv -v tmp.json mod.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.name }}
-          path: ${{ matrix.name }}
+
+      - name: Pack
+        run: |
+          mkdir -p output &&
+            cd ${{ matrix.name }} &&
+            zip ../output/${{ matrix.name }}-"v$(jq -r .version mod.json)".zip -9 -r .
+
+      - name: Upload
+        run: |
+          gh release upload "v$(jq -r .version src/mod.json)" output/${{ matrix.name }}*
+        env:
+          GH_TOKEN: ${{ github.token }}
