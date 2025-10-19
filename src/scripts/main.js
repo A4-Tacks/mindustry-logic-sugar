@@ -13,6 +13,13 @@ const singleAsmRead = (() => {
     return false
   }
 })();
+const generalRead = (b) => {
+  let read = singleAsmRead
+    ? LAssembler.read(b.toString())
+    : LAssembler.read(b.toString(), true);
+  return read.size == 0 ? null : read.first();
+};
+
 
 const sugars = {
   "++": {
@@ -271,11 +278,17 @@ const LogicSugar = {
     return this.gen_()
   },
   write(b) {
+    if ('generated_replace_' in this && this.generated_replace_ !== undefined) {
+      return this.generated_replace_.write(b);
+    }
     let generated = this.gen_().pop() || 'noop';
     debug(() => "generate expanded: "+generated);
     b.append(generated)
   },
   copy() {
+    if ('generated_replace_' in this && this.generated_replace_ !== undefined) {
+      return this.generated_replace_.copy();
+    }
     let b;
     let rest_stack = this.gen_();
     if (this.generate_trivial_) {
@@ -286,12 +299,16 @@ const LogicSugar = {
       debug(()=>"trivial copy: "+b);
     } else {
       b = rest_stack.pop() || 'noop';
+      if (rest_stack.length == 1) {
+        this.generated_replace_ = generalRead(rest_stack[0]);
+        if ('last_table_' in this && this.last_table_ !== undefined) {
+          this.build(this.last_table_);
+        }
+      }
     }
-    let read = singleAsmRead
-      ? LAssembler.read(b.toString())
-      : LAssembler.read(b.toString(), true);
+    let read = generalRead(b);
     debug(()=>"readed: "+read);
-    return read.size == 0 ? null : read.first();
+    return read;
   },
 
   build(h) {
@@ -314,7 +331,13 @@ const LogicSugar = {
       }
     };
 
+    this.last_table_ = table;
     table.clearChildren();
+
+    if ('generated_replace_' in this && this.generated_replace_ !== undefined) {
+      return this.generated_replace_.build(table);
+    }
+
     table.left();
 
     if (!sugars[this.op]) this.op = DEFAULT_OP;
@@ -357,8 +380,8 @@ const LogicSugar = {
     return table.button(op, Styles.logicTogglet, () => {
       if (this.op != op) {
         this.op = op;
-        this.buildt(root);
         this.op_refresh_();
+        this.buildt(root);
       }
       hide.run();
     });
